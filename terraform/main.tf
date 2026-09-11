@@ -13,12 +13,6 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Learning-stage placeholder.
-# We will build the real AWS infrastructure here during the Terraform stage.
-resource "aws_s3_bucket" "devops_demo" {
-  bucket = "${var.project_name}-${var.environment}-demo"
-}
-
 variable "aws_region" {
   description = "AWS region"
   type        = string
@@ -35,4 +29,34 @@ variable "environment" {
   description = "Environment name"
   type        = string
   default     = "dev"
+}
+
+resource "aws_s3_bucket" "devops_demo" {
+  bucket = "${var.project_name}-${var.environment}-demo"
+}
+
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+
+  owners = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+resource "aws_instance" "app_server" {
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = "t2.micro"
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-server"
+    Environment = var.environment
+  }
 }
